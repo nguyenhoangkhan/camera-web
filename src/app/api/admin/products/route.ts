@@ -6,8 +6,9 @@ const productSchema = z.object({
   name: z.string().min(2),
   slug: z.string().min(2),
   description: z.string().optional(),
-  imageUrl: z.string().url().optional().or(z.literal('')),
-  brand: z.string().default('Canon'),
+  imageUrl: z.string().optional().or(z.literal('')), // Main thumbnail
+  brandId: z.string().optional().nullable(),
+  images: z.array(z.string()).optional(), // Array of gallery image URLs
   type: z.string(),
   isBuyable: z.boolean().default(true),
   priceBuy: z.number().optional(),
@@ -21,7 +22,11 @@ const productSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const products = await prisma.product.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: {
+        brand: true,
+        images: true
+      }
     });
     
     return NextResponse.json(products);
@@ -58,7 +63,7 @@ export async function POST(req: NextRequest) {
         slug: data.slug,
         description: data.description,
         imageUrl: data.imageUrl,
-        brand: data.brand,
+        brandId: data.brandId,
         type: data.type,
         isBuyable: data.isBuyable,
         priceBuy: data.priceBuy,
@@ -66,6 +71,12 @@ export async function POST(req: NextRequest) {
         isRentable: data.isRentable,
         priceRentPerDay: data.priceRentPerDay,
         stockRent: data.stockRent,
+        images: {
+          create: data.images?.map(url => ({ url })) || []
+        }
+      },
+      include: {
+        images: true
       }
     });
     

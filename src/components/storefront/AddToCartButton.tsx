@@ -9,7 +9,7 @@ interface AddToCartButtonProps {
   product: {
     id: string;
     name: string;
-    imageUrl?: string;
+    imageUrl?: string | null;
     priceBuy?: number | null;
     priceRentPerDay?: number | null;
   };

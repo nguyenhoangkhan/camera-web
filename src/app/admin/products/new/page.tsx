@@ -3,25 +3,45 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Plus, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+
+interface Brand {
+  id: string;
+  name: string;
+}
+
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 export default function NewProductPage() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     description: '',
-    imageUrl: '',
-    brand: 'Canon',
+    imageUrl: '', // Primary image
+    brandId: '',
     type: 'Mirrorless',
     isBuyable: true,
     priceBuy: '',
@@ -29,6 +49,62 @@ export default function NewProductPage() {
     isRentable: false,
     priceRentPerDay: '',
     stockRent: '',
+  });
+
+  const [images, setImages] = useState<string[]>([]); // Gallery images
+
+  const { data: brands = [] } = useQuery<Brand[]>({
+    queryKey: ['brands'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/brands');
+      if (!res.ok) throw new Error('Failed to fetch brands');
+      return res.json();
+    },
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (formDataUpload: FormData) => {
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formDataUpload,
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      const newUrls = data.urls;
+      setImages(prev => [...prev, ...newUrls]);
+      if (!formData.imageUrl && newUrls.length > 0) {
+        setFormData(prev => ({ ...prev, imageUrl: newUrls[0] }));
+      }
+      toast.success(`Đã tải lên ${newUrls.length} ảnh`);
+    },
+    onError: () => toast.error('Lỗi khi tải ảnh lên'),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to create product');
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success('Đã Tạo Sản Phẩm!', {
+        description: `${formData.name} đã được thêm vào hệ thống.`
+      });
+      router.push('/admin/products');
+      router.refresh();
+    },
+    onError: (error: Error) => {
+      toast.error('Có lỗi xảy ra', { description: error.message || 'Không thể lưu sản phẩm.' });
+    }
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -40,11 +116,17 @@ export default function NewProductPage() {
     setFormData(prev => ({ ...prev, [name]: checked }));
   };
 
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const generateSlug = (name: string) => {
     return name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
   };
 
   const handleNameBlur = () => {
@@ -53,7 +135,28 @@ export default function NewProductPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    const files = Array.from(e.target.files);
+    const formDataUpload = new FormData();
+    files.forEach(file => formDataUpload.append('files', file));
+    uploadMutation.mutate(formDataUpload);
+    e.target.value = '';
+  };
+
+  const removeImage = (url: string) => {
+    setImages(prev => prev.filter(i => i !== url));
+    if (formData.imageUrl === url) {
+      setFormData(prev => ({ ...prev, imageUrl: images.find(i => i !== url) || '' }));
+    }
+  };
+
+  const setAsPrimary = (url: string) => {
+    setFormData(prev => ({ ...prev, imageUrl: url }));
+    toast.info('Đã đặt làm ảnh chính');
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.isBuyable && !formData.isRentable) {
@@ -61,99 +164,149 @@ export default function NewProductPage() {
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      // Clean up string inputs into numbers
-      const payload = {
-        ...formData,
-        priceBuy: formData.priceBuy ? parseFloat(formData.priceBuy) : null,
-        stockBuy: formData.stockBuy ? parseInt(formData.stockBuy, 10) : 0,
-        priceRentPerDay: formData.priceRentPerDay ? parseFloat(formData.priceRentPerDay) : null,
-        stockRent: formData.stockRent ? parseInt(formData.stockRent, 10) : 0,
-      };
-
-      const res = await fetch('/api/admin/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to create product');
-      }
-
-      toast.success('Đã Tạo Sản Phẩm!', {
-        description: `${formData.name} đã được thêm vào hệ thống.`
-      });
-      router.push('/admin/products');
-      router.refresh();
-      
-    } catch (error) {
-      console.error(error);
-      toast.error('Có lỗi xảy ra', { description: 'Không thể lưu sản phẩm vào database.' });
-      setIsSubmitting(false);
+    if (!formData.brandId) {
+      toast.error('Thiếu thông tin', { description: 'Vui lòng chọn thương hiệu cho sản phẩm.' });
+      return;
     }
+
+    const payload = {
+      ...formData,
+      priceBuy: formData.priceBuy ? parseFloat(formData.priceBuy) : null,
+      stockBuy: formData.stockBuy ? parseInt(formData.stockBuy, 10) : 0,
+      priceRentPerDay: formData.priceRentPerDay ? parseFloat(formData.priceRentPerDay) : null,
+      stockRent: formData.stockRent ? parseInt(formData.stockRent, 10) : 0,
+      images: images // Gallery URLs
+    };
+
+    saveMutation.mutate(payload);
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-20">
       <div className="flex items-center gap-4">
         <Link href="/admin/products">
           <Button variant="outline" size="icon"><ArrowLeft className="w-4 h-4" /></Button>
         </Link>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Thêm Thiết Bị Mới</h1>
-          <p className="text-muted-foreground mt-1">Cấu hình thông số và giá cho sản phẩm.</p>
+          <p className="text-muted-foreground mt-1">Cấu hình thông số, thương hiệu và hình ảnh.</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Thông Tin Chung</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Tên sản phẩm *</Label>
-                  <Input id="name" name="name" required value={formData.name} onChange={handleChange} onBlur={handleNameBlur} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="slug">Đường dẫn tĩnh (Slug) *</Label>
-                  <Input id="slug" name="slug" required value={formData.slug} onChange={handleChange} />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="brand">Thương hiệu</Label>
-                  <Input id="brand" name="brand" value={formData.brand} onChange={handleChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="type">Loại hình (Mirrorless, Lens, v.v.)</Label>
-                  <Input id="type" name="type" value={formData.type} onChange={handleChange} />
-                </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Thông Tin Chung</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Tên sản phẩm *</Label>
+                <Input id="name" name="name" required value={formData.name} onChange={handleChange} onBlur={handleNameBlur} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="imageUrl">URL Hình ảnh</Label>
-                <Input id="imageUrl" name="imageUrl" placeholder="https://..." value={formData.imageUrl} onChange={handleChange} />
+                <Label htmlFor="slug">Đường dẫn tĩnh (Slug) *</Label>
+                <Input id="slug" name="slug" required value={formData.slug} onChange={handleChange} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Thương hiệu *</Label>
+                <Select value={formData.brandId} onValueChange={(v: string | null) => handleSelectChange('brandId', v ?? '')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn thương hiệu" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brands.map((brand: Brand) => (
+                      <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
+                    ))}
+                    {brands.length === 0 && (
+                      <SelectItem value="none" disabled>Chưa có thương hiệu nào</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                <Link href="/admin/brands" className="text-xs text-primary hover:underline block mt-1">
+                  Quản lý danh sách thương hiệu
+                </Link>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Mô tả sản phẩm</Label>
-                <Textarea id="description" name="description" rows={4} value={formData.description} onChange={handleChange} />
+                <Label htmlFor="type">Loại hình</Label>
+                <Input id="type" name="type" placeholder="VD: Mirrorless, DSLR, Lens..." value={formData.type} onChange={handleChange} />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Mô tả sản phẩm</Label>
+              <Textarea id="description" name="description" rows={4} value={formData.description} onChange={handleChange} />
+            </div>
+          </CardContent>
+        </Card>
 
+        {/* Image Upload Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Hình Ảnh Sản Phẩm</CardTitle>
+            <CardDescription>Tải lên nhiều ảnh (JPG, PNG). Ảnh đầu tiên sẽ được đặt làm đại diện.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+              {images.map((url: string, index: number) => (
+                <div key={index} className="relative group aspect-square rounded-lg border overflow-hidden bg-muted">
+                  <Image src={url} alt={`Product ${index}`} fill className="object-cover" />
+                  {formData.imageUrl === url && (
+                    <div className="absolute top-0 left-0 bg-primary text-white text-[10px] px-2 py-0.5 rounded-br-lg font-bold">
+                      Ảnh chính
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Button 
+                      type="button" 
+                      variant="destructive" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => removeImage(url)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => setAsPrimary(url)}
+                      title="Đặt làm ảnh chính"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              
+              <label className="cursor-pointer border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 transition-colors rounded-lg flex flex-col items-center justify-center aspect-square gap-2 bg-muted/30">
+                {uploadMutation.isPending ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                ) : (
+                  <Plus className="w-6 h-6 text-muted-foreground" />
+                )}
+                <span className="text-xs text-muted-foreground">{uploadMutation.isPending ? 'Đang tải...' : 'Thêm ảnh'}</span>
+                <input 
+                  type="file" 
+                  multiple 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleFileUpload} 
+                  disabled={uploadMutation.isPending}
+                />
+              </label>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="border-primary/20">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Bán Sản Phẩm</CardTitle>
-                  <CardDescription>Thiết lập để khách hàng có thể mua đứt.</CardDescription>
                 </div>
                 <Switch 
                   checked={formData.isBuyable} 
@@ -180,7 +333,6 @@ export default function NewProductPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Cho Thuê Thiết Bị</CardTitle>
-                  <CardDescription>Cho phép khách thuê máy theo ngày.</CardDescription>
                 </div>
                 <Switch 
                   checked={formData.isRentable} 
@@ -207,8 +359,8 @@ export default function NewProductPage() {
           <Link href="/admin/products">
             <Button variant="outline" type="button">Huỷ bỏ</Button>
           </Link>
-          <Button type="submit" disabled={isSubmitting} className="flex items-center gap-2">
-            <Save className="w-4 h-4" /> {isSubmitting ? 'Đang lưu...' : 'Lưu Sản Phẩm'}
+          <Button type="submit" disabled={saveMutation.isPending || uploadMutation.isPending} className="flex items-center gap-2">
+            <Save className="w-4 h-4" /> {saveMutation.isPending ? 'Đang lưu...' : 'Lưu Sản Phẩm'}
           </Button>
         </div>
       </form>

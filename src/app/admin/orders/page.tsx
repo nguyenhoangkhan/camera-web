@@ -49,7 +49,7 @@ export default async function AdminOrdersPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map((order) => (
+              orders.map((order: any) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-mono text-xs">{order.id.slice(0, 8).toUpperCase()}</TableCell>
                   <TableCell>
@@ -73,13 +73,16 @@ export default async function AdminOrdersPage() {
                           <Clock className="w-3 h-3" /> Chờ xử lý
                         </Badge>
                       )}
-                      {order.status === 'COMPLETED' && (
+                      {(order.status === 'DELIVERED' || order.status === 'SHIPPED' || order.status === 'CONFIRMED') && (
                         <Badge variant="outline" className="text-green-500 border-green-500 flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" /> Hoàn thành
+                          <CheckCircle className="w-3 h-3" /> {order.status === 'DELIVERED' ? 'Hoàn thành' : (order.status === 'SHIPPED' ? 'Đang giao' : 'Đã xác nhận')}
                         </Badge>
                       )}
                       {order.status === 'CANCELLED' && (
                         <Badge variant="outline" className="text-destructive border-destructive">Đã huỷ</Badge>
+                      )}
+                      {order.status === 'RETURNED' && (
+                        <Badge variant="outline" className="text-gray-500 border-gray-500">Đã trả hàng</Badge>
                       )}
                     </div>
                   </TableCell>

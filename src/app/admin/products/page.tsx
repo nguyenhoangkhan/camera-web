@@ -8,7 +8,10 @@ import Image from 'next/image';
 
 export default async function AdminProductsPage() {
   const products = await prisma.product.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    include: {
+      brand: true
+    }
   });
 
   const formatCurrency = (amount: number) => {
@@ -49,7 +52,7 @@ export default async function AdminProductsPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              products.map((product) => (
+              products.map((product: any) => (
                 <TableRow key={product.id}>
                   <TableCell>
                     <div className="relative w-12 h-12 rounded bg-muted overflow-hidden">
@@ -62,7 +65,7 @@ export default async function AdminProductsPage() {
                   </TableCell>
                   <TableCell>
                     <p className="font-medium">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">{product.brand} • {product.type}</p>
+                    <p className="text-xs text-muted-foreground">{product.brand?.name || 'K/X'} • {product.type}</p>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1 w-fit">

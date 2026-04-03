@@ -25,7 +25,6 @@ export default async function ProductsPage() {
 
   // Fallback dummy data
   if (products.length === 0) {
-    // @ts-ignore
     products = [
       {
         id: '1', name: 'Canon EOS R5', slug: 'canon-eos-r5', description: 'Máy ảnh Mirrorless Full-frame chuyên nghiệp',
@@ -95,7 +94,13 @@ export default async function ProductsPage() {
             <CardFooter>
               <AddToCartButton 
                 type="BUY" 
-                product={product} 
+                product={{
+                  id: product.id,
+                  name: product.name,
+                  imageUrl: product.imageUrl,
+                  priceBuy: product.priceBuy,
+                  priceRentPerDay: product.priceRentPerDay
+                }} 
                 disabled={product.stockBuy <= 0} 
               />
             </CardFooter>

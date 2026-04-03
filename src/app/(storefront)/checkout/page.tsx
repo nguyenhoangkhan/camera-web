@@ -8,16 +8,43 @@ import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { useMutation } from '@tanstack/react-query';
+
 export default function CheckoutPage() {
   const { items, getTotal, clearCart } = useCartStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     customerEmail: '',
     customerPhone: '',
     customerAddress: ''
+  });
+
+  const checkoutMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      clearCart();
+      router.push(`/order/${data.orderId}/success`);
+    },
+    onError: (error: Error) => {
+      console.error(error);
+      alert(error.message || 'Không thể kết nối đến máy chủ.');
+    }
   });
 
   useEffect(() => {
@@ -40,42 +67,22 @@ export default function CheckoutPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    
+    const payload = {
+      ...formData,
+      totalAmount: getTotal(),
+      items: items.map(i => ({
+        productId: i.productId,
+        quantity: i.quantity,
+        price: i.price,
+        type: i.type,
+        rentDays: i.rentDays
+      }))
+    };
 
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          totalAmount: getTotal(),
-          items: items.map(i => ({
-            productId: i.productId,
-            quantity: i.quantity,
-            price: i.price,
-            type: i.type,
-            rentDays: i.rentDays
-          }))
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        clearCart();
-        router.push(`/order/${data.orderId}/success`);
-      } else {
-        alert('Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.');
-        setIsSubmitting(false);
-      }
-    } catch (error) {
-      console.error(error);
-      alert('Không thể kết nối đến máy chủ.');
-      setIsSubmitting(false);
-    }
+    checkoutMutation.mutate(payload);
   };
 
   return (
@@ -106,8 +113,8 @@ export default function CheckoutPage() {
                   <Label htmlFor="customerAddress">Địa chỉ nhận hàng</Label>
                   <Input id="customerAddress" name="customerAddress" required value={formData.customerAddress} onChange={handleInputChange} />
                 </div>
-                <Button type="submit" className="w-full mt-6" size="lg" disabled={isSubmitting}>
-                  {isSubmitting ? 'Đang xử lý...' : 'Xác nhặt Đặt Hàng'}
+                <Button type="submit" className="w-full mt-6" size="lg" disabled={checkoutMutation.isPending}>
+                  {checkoutMutation.isPending ? 'Đang xử lý...' : 'Xác nhận Đặt Hàng'}
                 </Button>
               </form>
             </CardContent>

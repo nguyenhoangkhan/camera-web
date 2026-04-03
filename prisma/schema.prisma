@@ -13,14 +13,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Brand {
+  id              String      @id @default(uuid())
+  name            String      @unique
+  slug            String      @unique
+  logoUrl         String?
+  products        Product[]
+  createdAt       DateTime    @default(now())
+}
+
+model ProductImage {
+  id              String      @id @default(uuid())
+  url             String
+  productId       String
+  product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt       DateTime    @default(now())
+}
+
 model Product {
   id              String      @id @default(uuid())
   name            String
   slug            String      @unique
   description     String?
-  imageUrl        String?
-  brand           String      @default("Canon")
+  imageUrl        String?     // Main/Thumbnail image
   type            String      // e.g., "DSLR", "Mirrorless", "Lens", "Accessory"
+  
+  // Brand Relation
+  brandId         String?
+  brand           Brand?      @relation(fields: [brandId], references: [id])
+  
+  // Multiple Images Gallery
+  images          ProductImage[]
   
   // Buy info
   isBuyable       Boolean     @default(true)

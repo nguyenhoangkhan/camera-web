@@ -14,7 +14,11 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   let product;
   try {
     product = await prisma.product.findUnique({
-      where: { slug: resolvedParams.slug }
+      where: { slug: resolvedParams.slug },
+      include: {
+        brand: true,
+        images: true
+      }
     });
   } catch (err) {
     console.error(err);
@@ -26,15 +30,17 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
       product = {
         id: '1', name: 'Canon EOS R5', slug: 'canon-eos-r5', description: 'Máy ảnh Mirrorless Full-frame chuyên nghiệp với độ phân giải siêu cao 45MP, quay video 8K RAW không crop. Tuyệt tác thực sự cho cả nhiếp ảnh gia và nhà quay phim.',
         imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop',
-        brand: 'Canon', type: 'Mirrorless', isBuyable: true, priceBuy: 85000000, stockBuy: 5,
-        isRentable: true, priceRentPerDay: 800000, stockRent: 2, createdAt: new Date(), updatedAt: new Date()
+        brand: { name: 'Canon' }, type: 'Mirrorless', isBuyable: true, priceBuy: 85000000, stockBuy: 5,
+        isRentable: true, priceRentPerDay: 800000, stockRent: 2, createdAt: new Date(), updatedAt: new Date(),
+        images: [{ url: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop' }]
       } as any;
     } else if (resolvedParams.slug === 'canon-rf-24-70mm') {
       product = {
         id: '2', name: 'Canon RF 24-70mm f/2.8L IS USM', slug: 'canon-rf-24-70mm', description: 'Ống kính zoom đa dụng cực kỳ sắc nét. Trang bị chống rung quang học IS.',
         imageUrl: 'https://images.unsplash.com/photo-1616423640778-28d1b53229bd?q=80&w=1200&auto=format&fit=crop',
-        brand: 'Canon', type: 'Lens', isBuyable: true, priceBuy: 55000000, stockBuy: 3,
-        isRentable: true, priceRentPerDay: 400000, stockRent: 4, createdAt: new Date(), updatedAt: new Date()
+        brand: { name: 'Canon' }, type: 'Lens', isBuyable: true, priceBuy: 55000000, stockBuy: 3,
+        isRentable: true, priceRentPerDay: 400000, stockRent: 4, createdAt: new Date(), updatedAt: new Date(),
+        images: [{ url: 'https://images.unsplash.com/photo-1616423640778-28d1b53229bd?q=80&w=1200&auto=format&fit=crop' }]
       } as any;
     }
   }
@@ -47,22 +53,36 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
 
+  const allImages = product.images.length > 0 ? product.images.map((img: any) => img.url) : [product.imageUrl || ''];
+
   return (
     <div className="container mx-auto py-10 px-4 md:px-6">
       <div className="grid md:grid-cols-2 gap-12 items-start">
-        <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-muted border">
-          {product.imageUrl ? (
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(min-width: 768px) 50vw, 100vw"
-              priority
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-secondary">
-              <span className="text-muted-foreground">Không có hình ảnh</span>
+        <div className="space-y-4">
+          <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-muted border">
+            {product.imageUrl ? (
+              <Image
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                className="object-cover"
+                sizes="(min-width: 768px) 50vw, 100vw"
+                priority
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center bg-secondary">
+                <span className="text-muted-foreground">Không có hình ảnh</span>
+              </div>
+            )}
+          </div>
+          
+          {allImages.length > 1 && (
+            <div className="grid grid-cols-5 gap-2">
+              {allImages.map((url: any, i: number) => (
+                <div key={i} className="relative aspect-square rounded-md overflow-hidden border bg-muted cursor-pointer hover:opacity-80 transition-opacity">
+                  <Image src={url} alt={`${product.name} ${i}`} fill className="object-cover" />
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -70,7 +90,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
         <div className="flex flex-col gap-6">
           <div>
             <div className="flex gap-2 mb-3">
-              <Badge>{product.brand}</Badge>
+              <Badge>{product.brand?.name || 'K/X'}</Badge>
               <Badge variant="outline">{product.type}</Badge>
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground mb-4">{product.name}</h1>
@@ -92,7 +112,17 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                   </div>
                 </div>
                 <div className="w-full sm:w-48">
-                  <AddToCartButton type="BUY" product={product} disabled={product.stockBuy <= 0} />
+                  <AddToCartButton 
+                    type="BUY" 
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      imageUrl: product.imageUrl,
+                      priceBuy: (product as any).priceBuy,
+                      priceRentPerDay: (product as any).priceRentPerDay
+                    }} 
+                    disabled={(product as any).stockBuy <= 0} 
+                  />
                 </div>
               </div>
             )}
@@ -109,7 +139,17 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                   </div>
                 </div>
                 <div className="w-full sm:w-48">
-                  <AddToCartButton type="RENT" product={product} disabled={product.stockRent <= 0} />
+                  <AddToCartButton 
+                    type="RENT" 
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      imageUrl: product.imageUrl,
+                      priceBuy: (product as any).priceBuy,
+                      priceRentPerDay: (product as any).priceRentPerDay
+                    }} 
+                    disabled={(product as any).stockRent <= 0} 
+                  />
                 </div>
               </div>
             )}

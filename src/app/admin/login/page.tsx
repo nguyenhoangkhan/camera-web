@@ -16,36 +16,41 @@ import { Label } from "@/components/ui/label";
 import { Camera, Lock } from "lucide-react";
 import { toast } from "sonner";
 
+import { useMutation } from "@tanstack/react-query";
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("123456");
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: any) => {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(credentials),
       });
-
-      if (res.ok) {
-        toast.success("Đăng nhập thành công");
-        router.push("/admin");
-        router.refresh();
-      } else {
+      
+      if (!res.ok) {
         const error = await res.json();
-        toast.error(error.error || "Đăng nhập thất bại");
+        throw new Error(error.error || "Đăng nhập thất bại");
       }
-    } catch (err) {
-      toast.error("Lỗi kết nối máy chủ");
-    } finally {
-      setLoading(false);
+      
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Đăng nhập thành công");
+      router.push("/admin");
+      router.refresh();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Lỗi kết nối máy chủ");
     }
+  });
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginMutation.mutate({ username, password });
   };
 
   return (
@@ -106,9 +111,9 @@ export default function AdminLoginPage() {
             <Button
               type="submit"
               className="w-full h-11 text-white shadow-lg"
-              disabled={loading}
+              disabled={loginMutation.isPending}
             >
-              {loading ? "Đang xác thực..." : "Đăng Nhập Ngay"}
+              {loginMutation.isPending ? "Đang xác thực..." : "Đăng Nhập Ngay"}
             </Button>
           </CardFooter>
         </form>
