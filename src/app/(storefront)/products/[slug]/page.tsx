@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import AddToCartButton from '@/components/storefront/AddToCartButton';
 
+export const dynamic = 'force-dynamic';
+
 interface ProductDetailPageProps {
   params: Promise<{ slug: string }>;
 }
