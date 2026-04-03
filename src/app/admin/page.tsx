@@ -17,7 +17,7 @@ import {
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
   // Aggregate stats
@@ -36,20 +36,31 @@ export default async function AdminDashboard() {
     _sum: {
       totalAmount: true,
     },
+    where: { status: "DELIVERED" },
   });
 
   const totalRevenue = aggregateResult._sum.totalAmount || 0;
 
-  // Additional stats: Sold vs Rented counts
+  // Additional stats: Sold vs Rented counts (Only for DELIVERED)
   const buyItemsStat = await prisma.orderItem.aggregate({
     _sum: { quantity: true },
-    where: { order: { orderType: "BUY" } },
+    where: {
+      order: {
+        orderType: "BUY",
+        status: "DELIVERED",
+      },
+    },
   });
   const totalSold = buyItemsStat._sum.quantity || 0;
 
   const rentItemsStat = await prisma.orderItem.aggregate({
     _sum: { quantity: true },
-    where: { order: { orderType: "RENT" } },
+    where: {
+      order: {
+        orderType: "RENT",
+        status: "DELIVERED",
+      },
+    },
   });
   const totalRented = rentItemsStat._sum.quantity || 0;
 
@@ -57,7 +68,12 @@ export default async function AdminDashboard() {
   const topSellersQuery = await prisma.orderItem.groupBy({
     by: ["productId"],
     _sum: { quantity: true },
-    where: { order: { orderType: "BUY" } },
+    where: {
+      order: {
+        orderType: "BUY",
+        status: "DELIVERED",
+      },
+    },
     orderBy: { _sum: { quantity: "desc" } },
     take: 3,
   });
@@ -80,7 +96,12 @@ export default async function AdminDashboard() {
   const topRentalsQuery = await prisma.orderItem.groupBy({
     by: ["productId"],
     _sum: { quantity: true },
-    where: { order: { orderType: "RENT" } },
+    where: {
+      order: {
+        orderType: "RENT",
+        status: "DELIVERED",
+      },
+    },
     orderBy: { _sum: { quantity: "desc" } },
     take: 3,
   });

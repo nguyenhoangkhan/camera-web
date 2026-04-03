@@ -30,7 +30,7 @@ export default async function Home() {
 
         <div className="relative z-10 container px-4 md:px-6 mx-auto grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content - Glassmorphism Card */}
-          <div className="flex flex-col gap-6 p-8 md:p-12 rounded-3xl bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl animate-in slide-in-from-left-8 fade-in duration-1000">
+          <div className="flex flex-col gap-6 p-6 lg:p-8 md:p-12 rounded-3xl bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl animate-in slide-in-from-left-8 fade-in duration-1000">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 w-fit">
               <Star className="w-4 h-4 fill-primary" />
               <span className="text-sm font-semibold tracking-wide uppercase">
