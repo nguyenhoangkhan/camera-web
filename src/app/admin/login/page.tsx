@@ -30,12 +30,12 @@ export default function AdminLoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
       });
-      
+
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || "Đăng nhập thất bại");
       }
-      
+
       return res.json();
     },
     onSuccess: () => {
@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Lỗi kết nối máy chủ");
-    }
+    },
   });
 
   const handleLogin = (e: React.FormEvent) => {
@@ -119,9 +119,9 @@ export default function AdminLoginPage() {
         </form>
       </Card>
 
-      <div className="mt-8 text-center text-sm text-zinc-500">
+      {/* <div className="mt-8 text-center text-sm text-zinc-500">
         <p>Mock Account: admin / 123456</p>
-      </div>
+      </div> */}
     </div>
   );
 }
