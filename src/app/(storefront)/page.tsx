@@ -49,13 +49,13 @@ export default async function Home() {
             
             <div className="flex flex-col sm:flex-row gap-4 mt-4">
               <Link href="/products" className="group">
-                <Button size="lg" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-8 h-14 rounded-full text-base flex items-center gap-2 group-hover:shadow-[0_0_20px_rgba(196,18,48,0.4)] transition-all">
+                <Button size="xl" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-8 rounded-full text-base flex items-center gap-2 group-hover:shadow-[0_0_20px_rgba(196,18,48,0.4)] transition-all">
                   Khám Phá Gian Hàng 
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
               <Link href="/rent" className="group">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white/30 bg-black/20 backdrop-blur-sm hover:bg-white hover:text-black font-semibold px-8 h-14 rounded-full text-base transition-all">
+                <Button size="xl" variant="outline" className="w-full sm:w-auto text-white border-white/30 bg-black/20 backdrop-blur-sm hover:bg-white hover:text-black font-semibold px-8 rounded-full text-base transition-all">
                   Thuê Thiết Bị
                 </Button>
               </Link>
