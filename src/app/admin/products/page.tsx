@@ -65,7 +65,9 @@ export default async function AdminProductsPage() {
                   </TableCell>
                   <TableCell>
                     <p className="font-medium">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">{product.brand?.name || 'K/X'} • {product.type}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {product.brand?.name || 'K/X'} • {product.category?.name || 'Chưa phân loại'}
+                    </p>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1 w-fit">

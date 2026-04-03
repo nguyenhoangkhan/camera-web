@@ -31,6 +31,11 @@ interface Brand {
   name: string;
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 import { useQuery, useMutation } from '@tanstack/react-query';
 
 export default function NewProductPage() {
@@ -42,7 +47,7 @@ export default function NewProductPage() {
     description: '',
     imageUrl: '', // Primary image
     brandId: '',
-    type: 'Mirrorless',
+    categoryId: '',
     isBuyable: true,
     priceBuy: '',
     stockBuy: '',
@@ -58,6 +63,15 @@ export default function NewProductPage() {
     queryFn: async () => {
       const res = await fetch('/api/admin/brands');
       if (!res.ok) throw new Error('Failed to fetch brands');
+      return res.json();
+    },
+  });
+
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/categories');
+      if (!res.ok) throw new Error('Failed to fetch categories');
       return res.json();
     },
   });
@@ -230,8 +244,23 @@ export default function NewProductPage() {
                 </Link>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="type">Loại hình</Label>
-                <Input id="type" name="type" placeholder="VD: Mirrorless, DSLR, Lens..." value={formData.type} onChange={handleChange} />
+                <Label>Danh mục *</Label>
+                <Select value={formData.categoryId} onValueChange={(v: string | null) => handleSelectChange('categoryId', v ?? '')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn danh mục" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat: Category) => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
+                    {categories.length === 0 && (
+                      <SelectItem value="none" disabled>Chưa có danh mục nào</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                <Link href="/admin/categories" className="text-xs text-primary hover:underline block mt-1">
+                  Quản lý danh sách danh mục
+                </Link>
               </div>
             </div>
             <div className="space-y-2">

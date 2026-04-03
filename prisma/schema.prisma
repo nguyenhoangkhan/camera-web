@@ -22,6 +22,15 @@ model Brand {
   createdAt       DateTime    @default(now())
 }
 
+model Category {
+  id              String      @id @default(uuid())
+  name            String      @unique
+  slug            String      @unique
+  description     String?
+  products        Product[]
+  createdAt       DateTime    @default(now())
+}
+
 model ProductImage {
   id              String      @id @default(uuid())
   url             String
@@ -36,11 +45,14 @@ model Product {
   slug            String      @unique
   description     String?
   imageUrl        String?     // Main/Thumbnail image
-  type            String      // e.g., "DSLR", "Mirrorless", "Lens", "Accessory"
   
   // Brand Relation
   brandId         String?
   brand           Brand?      @relation(fields: [brandId], references: [id])
+
+  // Category Relation
+  categoryId      String?
+  category        Category?   @relation(fields: [categoryId], references: [id])
   
   // Multiple Images Gallery
   images          ProductImage[]

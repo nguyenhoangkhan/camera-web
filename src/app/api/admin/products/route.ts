@@ -8,8 +8,8 @@ const productSchema = z.object({
   description: z.string().optional(),
   imageUrl: z.string().optional().or(z.literal('')), // Main thumbnail
   brandId: z.string().optional().nullable(),
+  categoryId: z.string().optional().nullable(),
   images: z.array(z.string()).optional(), // Array of gallery image URLs
-  type: z.string(),
   isBuyable: z.boolean().default(true),
   priceBuy: z.number().optional(),
   stockBuy: z.number().default(0),
@@ -19,12 +19,13 @@ const productSchema = z.object({
 });
 
 // GET /api/admin/products
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const products = await prisma.product.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         brand: true,
+        category: true,
         images: true
       }
     });
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
         description: data.description,
         imageUrl: data.imageUrl,
         brandId: data.brandId,
-        type: data.type,
+        categoryId: data.categoryId,
         isBuyable: data.isBuyable,
         priceBuy: data.priceBuy,
         stockBuy: data.stockBuy,
@@ -76,7 +77,9 @@ export async function POST(req: NextRequest) {
         }
       },
       include: {
-        images: true
+        images: true,
+        category: true,
+        brand: true
       }
     });
     
