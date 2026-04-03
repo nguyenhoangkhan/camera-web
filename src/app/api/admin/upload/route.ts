@@ -1,44 +1,47 @@
-import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { NextRequest, NextResponse } from 'next/server';
+import { v2 as cloudinary } from 'cloudinary';
 
-export async function POST(request: Request) {
+// Cloudinary is automatically configured via CLOUDINARY_URL env var if it exists,
+// but we can also set it explicitly if needed.
+cloudinary.config({
+  cloudinary_url: process.env.CLOUDINARY_URL
+});
+
+export async function POST(req: NextRequest) {
   try {
-    const formData = await request.formData();
+    const formData = await req.formData();
     const files = formData.getAll('files') as File[];
 
     if (!files || files.length === 0) {
       return NextResponse.json({ error: 'No files uploaded' }, { status: 400 });
     }
 
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    
-    // Ensure upload directory exists
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (err) {
-      // Ignore if dir already exists
-    }
+    const uploadPromises = files.map(async (file) => {
+      // Convert File to Buffer
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
 
-    const uploadedUrls = [];
+      // Upload to Cloudinary using a promise-based approach
+      return new Promise<string>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'camera-web', // Optional: organize images in a folder
+            resource_type: 'auto',
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result?.secure_url || '');
+          }
+        );
+        uploadStream.end(buffer);
+      });
+    });
 
-    for (const file of files) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+    const urls = await Promise.all(uploadPromises);
 
-      // Create unique filename
-      const fileExtension = file.name.split('.').pop();
-      const fileName = `${uuidv4()}.${fileExtension}`;
-      const path = join(uploadDir, fileName);
-
-      await writeFile(path, buffer);
-      uploadedUrls.push(`/uploads/${fileName}`);
-    }
-
-    return NextResponse.json({ urls: uploadedUrls });
+    return NextResponse.json({ urls });
   } catch (error) {
-    console.error('Upload error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    console.error('Cloudinary upload error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -2,7 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Camera, LayoutDashboard, Package, ShoppingCart, Settings } from 'lucide-react';
+import { 
+  Camera, 
+  LayoutDashboard, 
+  Package, 
+  ShoppingCart, 
+  Settings,
+  LayoutGrid,
+  Building2
+} from 'lucide-react';
 
 export default function AdminSidebar() {
   const pathname = usePathname();
@@ -19,6 +27,18 @@ export default function AdminSidebar() {
       icon: Package,
       href: '/admin/products',
       active: pathname.startsWith('/admin/products'),
+    },
+    {
+      label: 'Danh Mục',
+      icon: LayoutGrid,
+      href: '/admin/categories',
+      active: pathname.startsWith('/admin/categories'),
+    },
+    {
+      label: 'Thương Hiệu',
+      icon: Building2,
+      href: '/admin/brands',
+      active: pathname.startsWith('/admin/brands'),
     },
     {
       label: 'Quản Lý Đơn Hàng',
