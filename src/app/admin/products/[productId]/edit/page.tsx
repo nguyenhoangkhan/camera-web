@@ -110,22 +110,45 @@ export default function EditProductPage() {
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async (formDataUpload: FormData) => {
-      const res = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formDataUpload,
+    mutationFn: async (files: File[]) => {
+      // 1. Get signature from server
+      const signRes = await fetch('/api/admin/cloudinary/sign', { method: 'POST' });
+      if (!signRes.ok) throw new Error('Failed to get upload signature');
+      const { signature, timestamp, cloud_name, api_key, folder } = await signRes.json();
+
+      // 2. Upload each file directly to Cloudinary
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', api_key);
+        formData.append('timestamp', timestamp);
+        formData.append('signature', signature);
+        formData.append('folder', folder);
+
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error?.message || 'Cloudinary upload failed');
+        }
+
+        const data = await res.json();
+        return data.secure_url as string;
       });
-      if (!res.ok) throw new Error('Upload failed');
-      return res.json();
+
+      return Promise.all(uploadPromises);
     },
-    onSuccess: (data) => {
-      const newUrls = data.urls;
+    onSuccess: (newUrls: string[]) => {
       setImages(prev => [...prev, ...newUrls]);
       if (!formData.imageUrl && newUrls.length > 0) {
         setFormData(prev => ({ ...prev, imageUrl: newUrls[0] }));
       }
       toast.success(`Đã tải thêm ${newUrls.length} ảnh`);
-    }
+    },
+    onError: (error: Error) => toast.error(`Lỗi khi tải ảnh: ${error.message}`),
   });
 
   const saveMutation = useMutation({
@@ -167,9 +190,7 @@ export default function EditProductPage() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
     const files = Array.from(e.target.files);
-    const formDataUpload = new FormData();
-    files.forEach(file => formDataUpload.append('files', file));
-    uploadMutation.mutate(formDataUpload);
+    uploadMutation.mutate(files);
     e.target.value = '';
   };
 
