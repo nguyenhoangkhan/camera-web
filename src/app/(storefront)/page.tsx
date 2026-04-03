@@ -12,6 +12,10 @@ export default async function Home() {
   try {
     featuredProducts = await prisma.product.findMany({
       where: { isBuyable: true },
+      include: {
+        category: true,
+        brand: true
+      },
       orderBy: { createdAt: 'desc' },
       take: 4
     });
@@ -24,22 +28,22 @@ export default async function Home() {
       {
         id: '1', slug: 'canon-eos-r5', name: 'Canon EOS R5', description: 'Đỉnh cao Mirrorless Full-frame 45MP, quay 8K RAW.',
         imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=800&auto=format&fit=crop',
-        brand: 'Canon', type: 'Mirrorless', isBuyable: true, priceBuy: 85000000, stockBuy: 5,
+        brand: { name: 'Canon' }, category: { name: 'Mirrorless' }, isBuyable: true, priceBuy: 85000000, stockBuy: 5,
       },
       {
         id: '2', slug: 'canon-rf-24-70mm', name: 'Canon RF 24-70mm f/2.8L', description: 'Ống kính zoom đa dụng cực kỳ sắc nét. L-series.',
         imageUrl: 'https://images.unsplash.com/photo-1616423640778-28d1b53229bd?q=80&w=800&auto=format&fit=crop',
-        brand: 'Canon', type: 'Lens', isBuyable: true, priceBuy: 55000000, stockBuy: 3,
+        brand: { name: 'Canon' }, category: { name: 'Lens' }, isBuyable: true, priceBuy: 55000000, stockBuy: 3,
       },
       {
         id: '3', slug: 'canon-eos-1dx-mk3', name: 'Canon EOS-1D X Mark III', description: 'Máy ảnh DSLR tột đỉnh dành cho thể thao và thế giới tự nhiên.',
         imageUrl: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?q=80&w=800&auto=format&fit=crop',
-        brand: 'Canon', type: 'DSLR', isBuyable: true, priceBuy: 160000000, stockBuy: 1,
+        brand: { name: 'Canon' }, category: { name: 'DSLR' }, isBuyable: true, priceBuy: 160000000, stockBuy: 1,
       },
       {
         id: '4', slug: 'canon-ef-70-200mm', name: 'Canon EF 70-200mm f/2.8L', description: 'Huyền thoại ống kính Tele phong cảnh và chân dung.',
         imageUrl: 'https://images.unsplash.com/photo-1496096265110-f83ad7f96608?q=80&w=800&auto=format&fit=crop',
-        brand: 'Canon', type: 'Lens', isBuyable: true, priceBuy: 45000000, stockBuy: 10,
+        brand: { name: 'Canon' }, category: { name: 'Lens' }, isBuyable: true, priceBuy: 45000000, stockBuy: 10,
       }
     ];
   }
@@ -139,13 +143,13 @@ export default async function Home() {
                       </div>
                     )}
                     <div className="absolute top-3 left-3 flex gap-2">
-                      <Badge className="bg-background/80 backdrop-blur text-foreground border-none hover:bg-background/90">{product.brand}</Badge>
+                      <Badge className="bg-background/80 backdrop-blur text-foreground border-none hover:bg-background/90">{product.brand?.name || 'Canon'}</Badge>
                     </div>
                   </div>
                 </Link>
                 <div className="p-5 flex flex-col flex-1">
                   <div className="mb-2">
-                    <Badge variant="outline" className="text-xs font-normal text-muted-foreground">{product.type}</Badge>
+                    <Badge variant="outline" className="text-xs font-normal text-muted-foreground">{product.category?.name || 'Thiết bị'}</Badge>
                   </div>
                   <Link href={`/products/${product.slug}`} className="mb-1">
                     <h4 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors">{product.name}</h4>

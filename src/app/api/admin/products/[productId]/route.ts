@@ -19,7 +19,7 @@ const productSchema = z.object({
 });
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: Promise<{ productId: string }> },
 ) {
   try {
@@ -41,10 +41,11 @@ export async function GET(
     }
 
     return NextResponse.json(product);
-  } catch (error: any) {
-    console.error("DEBUG ERROR Failed to fetch product:", error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("DEBUG ERROR Failed to fetch product:", message);
     return NextResponse.json(
-      { error: "Internal Server Error", message: error.message },
+      { error: "Internal Server Error", message },
       { status: 500 },
     );
   }
@@ -52,7 +53,7 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { productId: string } },
+  { params }: { params: Promise<{ productId: string }> },
 ) {
   try {
     const { productId } = await params;
@@ -124,7 +125,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { productId: string } },
+  { params }: { params: Promise<{ productId: string }> },
 ) {
   try {
     const { productId } = await params;

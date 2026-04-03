@@ -13,10 +13,14 @@ export const metadata: Metadata = {
 };
 
 export default async function ProductsPage() {
-  let products: Product[] = [];
+  let products: any[] = [];
   try {
     products = await prisma.product.findMany({
       where: { isBuyable: true },
+      include: {
+        category: true,
+        brand: true
+      },
       orderBy: { createdAt: 'desc' }
     });
   } catch (error) {
@@ -29,16 +33,16 @@ export default async function ProductsPage() {
       {
         id: '1', name: 'Canon EOS R5', slug: 'canon-eos-r5', description: 'Máy ảnh Mirrorless Full-frame chuyên nghiệp',
         imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=800&auto=format&fit=crop',
-        brand: 'Canon', type: 'Mirrorless', isBuyable: true, priceBuy: 85000000, stockBuy: 5,
+        brand: { name: 'Canon' }, category: { name: 'Mirrorless' }, isBuyable: true, priceBuy: 85000000, stockBuy: 5,
         isRentable: true, priceRentPerDay: 800000, stockRent: 2, createdAt: new Date(), updatedAt: new Date()
       },
       {
         id: '2', name: 'Canon RF 24-70mm f/2.8L IS USM', slug: 'canon-rf-24-70mm', description: 'Ống kính zoom đa dụng',
         imageUrl: 'https://images.unsplash.com/photo-1616423640778-28d1b53229bd?q=80&w=800&auto=format&fit=crop',
-        brand: 'Canon', type: 'Lens', isBuyable: true, priceBuy: 55000000, stockBuy: 3,
+        brand: { name: 'Canon' }, category: { name: 'Lens' }, isBuyable: true, priceBuy: 55000000, stockBuy: 3,
         isRentable: true, priceRentPerDay: 400000, stockRent: 4, createdAt: new Date(), updatedAt: new Date()
       }
-    ] as unknown as Product[];
+    ];
   }
 
   const formatCurrency = (amount: number) => {
@@ -74,7 +78,7 @@ export default async function ProductsPage() {
             </Link>
             <CardHeader>
               <div className="flex justify-between items-start gap-2 mb-2">
-                <Badge variant="outline">{product.type}</Badge>
+                <Badge variant="outline">{product.category?.name || 'K/X'}</Badge>
                 {product.stockBuy > 0 ? (
                   <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">Còn hàng</Badge>
                 ) : (

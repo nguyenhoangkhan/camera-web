@@ -17,6 +17,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
       where: { slug: resolvedParams.slug },
       include: {
         brand: true,
+        category: true,
         images: true
       }
     });
@@ -30,7 +31,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
       product = {
         id: '1', name: 'Canon EOS R5', slug: 'canon-eos-r5', description: 'Máy ảnh Mirrorless Full-frame chuyên nghiệp với độ phân giải siêu cao 45MP, quay video 8K RAW không crop. Tuyệt tác thực sự cho cả nhiếp ảnh gia và nhà quay phim.',
         imageUrl: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop',
-        brand: { name: 'Canon' }, type: 'Mirrorless', isBuyable: true, priceBuy: 85000000, stockBuy: 5,
+        brand: { name: 'Canon' }, category: { name: 'Mirrorless' }, isBuyable: true, priceBuy: 85000000, stockBuy: 5,
         isRentable: true, priceRentPerDay: 800000, stockRent: 2, createdAt: new Date(), updatedAt: new Date(),
         images: [{ url: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop' }]
       } as any;
@@ -38,7 +39,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
       product = {
         id: '2', name: 'Canon RF 24-70mm f/2.8L IS USM', slug: 'canon-rf-24-70mm', description: 'Ống kính zoom đa dụng cực kỳ sắc nét. Trang bị chống rung quang học IS.',
         imageUrl: 'https://images.unsplash.com/photo-1616423640778-28d1b53229bd?q=80&w=1200&auto=format&fit=crop',
-        brand: { name: 'Canon' }, type: 'Lens', isBuyable: true, priceBuy: 55000000, stockBuy: 3,
+        brand: { name: 'Canon' }, category: { name: 'Lens' }, isBuyable: true, priceBuy: 55000000, stockBuy: 3,
         isRentable: true, priceRentPerDay: 400000, stockRent: 4, createdAt: new Date(), updatedAt: new Date(),
         images: [{ url: 'https://images.unsplash.com/photo-1616423640778-28d1b53229bd?q=80&w=1200&auto=format&fit=crop' }]
       } as any;
@@ -91,7 +92,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
           <div>
             <div className="flex gap-2 mb-3">
               <Badge>{product.brand?.name || 'K/X'}</Badge>
-              <Badge variant="outline">{product.type}</Badge>
+              <Badge variant="outline">{product.category?.name || 'K/X'}</Badge>
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground mb-4">{product.name}</h1>
             <p className="text-lg text-muted-foreground whitespace-pre-line leading-relaxed">

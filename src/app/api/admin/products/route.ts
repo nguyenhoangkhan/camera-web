@@ -19,7 +19,7 @@ const productSchema = z.object({
 });
 
 // GET /api/admin/products
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
     const products = await prisma.product.findMany({
       orderBy: { createdAt: 'desc' },

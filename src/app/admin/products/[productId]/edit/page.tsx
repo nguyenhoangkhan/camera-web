@@ -257,7 +257,7 @@ export default function EditProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Thương hiệu</Label>
-                <Select value={formData.brandId} onValueChange={(v) => handleSelectChange('brandId', v)}>
+                <Select value={formData.brandId || ""} onValueChange={(v) => handleSelectChange("brandId", v || "")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn thương hiệu" />
                   </SelectTrigger>
@@ -270,7 +270,7 @@ export default function EditProductPage() {
               </div>
               <div className="space-y-2">
                 <Label>Danh mục</Label>
-                <Select value={formData.categoryId} onValueChange={(v) => handleSelectChange('categoryId', v)}>
+                <Select value={formData.categoryId || ""} onValueChange={(v) => handleSelectChange("categoryId", v || "")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn danh mục" />
                   </SelectTrigger>

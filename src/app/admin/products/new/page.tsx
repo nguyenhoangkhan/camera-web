@@ -60,7 +60,7 @@ export default function NewProductPage() {
 
   const { data: brands = [] } = useQuery<Brand[]>({
     queryKey: ['brands'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Brand[]> => {
       const res = await fetch('/api/admin/brands');
       if (!res.ok) throw new Error('Failed to fetch brands');
       return res.json();
@@ -69,7 +69,7 @@ export default function NewProductPage() {
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ['categories'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Category[]> => {
       const res = await fetch('/api/admin/categories');
       if (!res.ok) throw new Error('Failed to fetch categories');
       return res.json();
@@ -85,8 +85,7 @@ export default function NewProductPage() {
       if (!res.ok) throw new Error('Upload failed');
       return res.json();
     },
-    onSuccess: (data) => {
-      const newUrls = data.urls;
+    onSuccess: ({ urls: newUrls }: { urls: string[] }) => {
       setImages(prev => [...prev, ...newUrls]);
       if (!formData.imageUrl && newUrls.length > 0) {
         setFormData(prev => ({ ...prev, imageUrl: newUrls[0] }));
@@ -97,7 +96,7 @@ export default function NewProductPage() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async (payload: Record<string, any>) => {
       const res = await fetch('/api/admin/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -183,9 +182,9 @@ export default function NewProductPage() {
       return;
     }
 
-    const payload: any = {
+    const payload: Record<string, any> = {
       ...formData,
-      images: images
+      images: images // Gallery URLs
     };
 
     if (formData.isBuyable) {
@@ -238,7 +237,7 @@ export default function NewProductPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Thương hiệu *</Label>
-                <Select value={formData.brandId} onValueChange={(v: string | null) => handleSelectChange('brandId', v ?? '')}>
+                <Select value={formData.brandId || ""} onValueChange={(v: string | null) => handleSelectChange('brandId', v || "")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn thương hiệu" />
                   </SelectTrigger>
@@ -257,7 +256,7 @@ export default function NewProductPage() {
               </div>
               <div className="space-y-2">
                 <Label>Danh mục *</Label>
-                <Select value={formData.categoryId} onValueChange={(v: string | null) => handleSelectChange('categoryId', v ?? '')}>
+                <Select value={formData.categoryId || ""} onValueChange={(v: string | null) => handleSelectChange('categoryId', v || "")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn danh mục" />
                   </SelectTrigger>
