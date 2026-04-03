@@ -5,11 +5,84 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Product {
+  id              String      @id @default(uuid())
+  name            String
+  slug            String      @unique
+  description     String?
+  imageUrl        String?
+  brand           String      @default("Canon")
+  type            String      // e.g., "DSLR", "Mirrorless", "Lens", "Accessory"
+  
+  // Buy info
+  isBuyable       Boolean     @default(true)
+  priceBuy        Float?
+  stockBuy        Int         @default(0)
+  
+  // Rent info
+  isRentable      Boolean     @default(false)
+  priceRentPerDay Float?
+  stockRent       Int         @default(0)
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  orderItems      OrderItem[]
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  customerAddress String?
+  status          OrderStatus @default(PENDING)
+  totalAmount     Float
+  
+  orderType       OrderType   @default(BUY) 
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id              String      @id @default(uuid())
+  orderId         String
+  productId       String
+  
+  quantity        Int         @default(1)
+  itemType        OrderType   // BUY or RENT
+  
+  // Snapshot of price at order time
+  price           Float       
+  
+  // Rent specifics
+  rentStartDate   DateTime?
+  rentEndDate     DateTime?
+  
+  order           Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum OrderType {
+  BUY
+  RENT
 }
