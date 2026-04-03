@@ -18,6 +18,11 @@ export default function MainNav() {
       active: pathname === '/rent' || pathname.startsWith('/rent/'),
     },
     {
+      href: '/contact',
+      label: 'Liên hệ',
+      active: pathname === '/contact' || pathname.startsWith('/contact/'),
+    },
+    {
       href: '/admin',
       label: 'Admin (Demo)',
       active: pathname === '/admin' || pathname.startsWith('/admin/'),

@@ -6,7 +6,7 @@ const productSchema = z.object({
   name: z.string().min(2),
   slug: z.string().min(2),
   description: z.string().optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
   brand: z.string().default('Canon'),
   type: z.string(),
   isBuyable: z.boolean().default(true),

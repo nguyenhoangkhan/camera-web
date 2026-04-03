@@ -1,4 +1,4 @@
-import { notFound } from 'next';
+import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
