@@ -17,6 +17,8 @@ import {
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
   // Aggregate stats
   const totalProducts = await prisma.product.count();

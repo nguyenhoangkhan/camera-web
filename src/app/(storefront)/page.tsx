@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, ShieldCheck, Truck, Zap, ArrowRight, Star } from "lucide-react";
 import AddToCartButton from "@/components/storefront/AddToCartButton";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   // Try fetching products, fallback to rich dummy data
   let featuredProducts: any[] = [];
