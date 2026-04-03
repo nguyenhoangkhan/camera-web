@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
-import { Camera } from 'lucide-react';
-import AddToCartButton from '@/components/storefront/AddToCartButton';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Camera } from "lucide-react";
+import AddToCartButton from "@/components/storefront/AddToCartButton";
+import { Skeleton } from "../ui/skeleton";
 
 interface Product {
   id: string;
@@ -22,18 +23,22 @@ interface Product {
 }
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
   }).format(amount);
 };
 
 export default function FeaturedProducts() {
-  const { data: products, isLoading, error } = useQuery<Product[]>({
-    queryKey: ['featured-products'],
+  const {
+    data: products,
+    isLoading,
+    error,
+  } = useQuery<Product[]>({
+    queryKey: ["featured-products"],
     queryFn: async () => {
-      const response = await fetch('/api/products/featured');
-      if (!response.ok) throw new Error('Failed to fetch');
+      const response = await fetch("/api/products/featured");
+      if (!response.ok) throw new Error("Failed to fetch");
       return response.json();
     },
   });
@@ -42,7 +47,10 @@ export default function FeaturedProducts() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="flex flex-col rounded-2xl border shadow-sm overflow-hidden">
+          <div
+            key={i}
+            className="flex flex-col rounded-2xl border shadow-sm overflow-hidden"
+          >
             <Skeleton className="aspect-4/3 w-full" />
             <div className="p-5 space-y-3">
               <Skeleton className="h-4 w-20" />
@@ -57,10 +65,35 @@ export default function FeaturedProducts() {
     );
   }
 
-  if (error || !products || products.length === 0) {
+  if (error || !products) {
+    const errorDetails = (error as any)?.message || "Lỗi không xác định";
+    return (
+      <div className="text-center py-12 border-2 border-dashed rounded-3xl bg-destructive/5 space-y-4">
+        <p className="text-destructive font-medium">
+          Không thể tải sản phẩm nổi bật
+        </p>
+        <p className="text-xs text-muted-foreground px-4">
+          Chi tiết lỗi: {errorDetails}
+        </p>
+        <div className="pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.reload()}
+          >
+            Thử lại trang
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (products.length === 0) {
     return (
       <div className="text-center py-12 border-2 border-dashed rounded-3xl">
-        <p className="text-muted-foreground">Không tìm thấy sản phẩm nổi bật nào.</p>
+        <p className="text-muted-foreground">
+          Không tìm thấy sản phẩm nổi bật nào.
+        </p>
       </div>
     );
   }
@@ -89,7 +122,7 @@ export default function FeaturedProducts() {
               )}
               <div className="absolute top-3 left-3 flex gap-2">
                 <Badge className="bg-background/80 backdrop-blur text-foreground border-none hover:bg-background/90">
-                  {product.brand?.name || 'Canon'}
+                  {product.brand?.name || "Canon"}
                 </Badge>
               </div>
             </div>
@@ -100,7 +133,7 @@ export default function FeaturedProducts() {
                 variant="outline"
                 className="text-xs font-normal text-muted-foreground"
               >
-                {product.category?.name || 'Thiết bị'}
+                {product.category?.name || "Thiết bị"}
               </Badge>
             </div>
             <Link href={`/products/${product.slug}`} className="mb-1">
@@ -113,7 +146,9 @@ export default function FeaturedProducts() {
             </p>
             <div className="flex items-center justify-between mt-auto">
               <p className="text-xl font-bold">
-                {product.priceBuy ? formatCurrency(product.priceBuy) : 'Liên hệ'}
+                {product.priceBuy
+                  ? formatCurrency(product.priceBuy)
+                  : "Liên hệ"}
               </p>
             </div>
             <div className="mt-4 pt-4 border-t">

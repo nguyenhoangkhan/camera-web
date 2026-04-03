@@ -16,10 +16,18 @@ export async function GET() {
     });
 
     return NextResponse.json(products);
-  } catch (error) {
-    console.error('Failed to fetch featured products:', error);
+  } catch (error: any) {
+    console.error('FAILED TO FETCH FEATURED PRODUCTS ON VERCEL:', 
+      '\nError Message:', error.message, 
+      '\nError Code:', error.code,
+      '\nEnv DATABASE_URL starts with:', process.env.DATABASE_URL ? process.env.DATABASE_URL.slice(0, 10) : 'MISSING'
+    );
+    
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { 
+        error: 'Internal Server Error',
+        details: error.message 
+      },
       { status: 500 }
     );
   }
